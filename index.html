@@ -135,64 +135,55 @@
             document.querySelectorAll('.message').forEach(msg => msg.style.display = 'none');
         }
 
+        // Função para validar login
         function login() {
             clearMessages();
             const username = document.getElementById('username').value;
             const password = document.getElementById('password').value;
 
-            if (username === 'admin' && password === '12345') {
-                sessionStorage.setItem('authenticated', 'true');
-                window.location.href = 'protected.html';
-            } else {
-                const loginError = document.getElementById('login-error');
-                loginError.style.display = 'block';
-                loginError.innerText = 'Usuário ou senha incorretos!';
-            }
-        }
+            // Buscando arquivo CSV do GitHub
+            const csvUrl = 'https://raw.githubusercontent.com/Omninsight/insighthub360/main/Logins.csv';
 
-        function sendRegistration() {
-            clearMessages();
-            const companyName = document.getElementById('companyName').value;
-            const fullName = document.getElementById('fullName').value;
-            const phone = document.getElementById('phone').value;
-            const email = document.getElementById('corporateEmail').value;
+            fetch(csvUrl)
+                .then(response => response.text())
+                .then(data => {
+                    const rows = data.split('\n');
+                    let userFound = false;
 
-            if (!companyName || !fullName || !phone || !email) {
-                const registerError = document.getElementById('register-error');
-                registerError.style.display = 'block';
-                registerError.innerText = 'Por favor, preencha todos os campos obrigatórios.';
-                return;
-            }
+                    // Percorrer as linhas do CSV
+                    rows.forEach(row => {
+                        const cols = row.split(',');
 
-            const templateParams = {
-                company_name: companyName,
-                user_name: fullName,
-                user_phone: phone,
-                user_email: email,
-            };
+                        // Verifica se o usuário e senha são válidos
+                        if (cols[3] === username && cols[4] === password) {
+                            if (cols[5] === "Ativo") {
+                                sessionStorage.setItem('authenticated', 'true');
+                                window.location.href = cols[6]; // Redireciona para o relatório específico
+                            } else {
+                                const loginError = document.getElementById('login-error');
+                                loginError.style.display = 'block';
+                                loginError.innerText = 'Usuário está inativo!';
+                            }
+                            userFound = true;
+                        }
+                    });
 
-            emailjs.send('service_vgdg7h8', 'template_ka5ro7n', templateParams)
-                .then(() => {
-                    const registerSuccess = document.getElementById('register-success');
-                    registerSuccess.style.display = 'block';
-                    registerSuccess.innerText = 'Cadastro enviado com sucesso. Aguarde enquanto validamos!';
+                    if (!userFound) {
+                        const loginError = document.getElementById('login-error');
+                        loginError.style.display = 'block';
+                        loginError.innerText = 'Usuário ou senha incorretos!';
+                    }
                 })
-                .catch((error) => {
-                    console.error('Erro ao enviar o cadastro:', error);
-                    const registerError = document.getElementById('register-error');
-                    registerError.style.display = 'block';
-                    registerError.innerText = 'Erro ao enviar o cadastro. Tente novamente mais tarde.';
+                .catch(error => {
+                    const loginError = document.getElementById('login-error');
+                    loginError.style.display = 'block';
+                    loginError.innerText = 'Erro ao acessar os dados de login. Tente novamente mais tarde.';
                 });
         }
 
         document.addEventListener('keydown', function (event) {
             if (event.key === 'Enter') {
-                const loginTab = document.getElementById('loginTab');
-                if (loginTab.classList.contains('active')) {
-                    login();
-                } else {
-                    sendRegistration();
-                }
+                login();
             }
         });
 
