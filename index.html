@@ -3,7 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login</title>
+    <title>Login com Excel</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.17.0/xlsx.full.min.js"></script>
     <script src="https://cdn.emailjs.com/dist/email.min.js"></script>
     <style>
         body {
@@ -135,18 +136,41 @@
             document.querySelectorAll('.message').forEach(msg => msg.style.display = 'none');
         }
 
-        function login() {
+        // Função para carregar o Excel
+        async function loadExcel() {
+            const response = await fetch('Logins.xlsx'); // Certifique-se de que o arquivo está no mesmo diretório
+            const data = await response.arrayBuffer();
+            const workbook = XLSX.read(data, { type: 'array' });
+            const sheet = workbook.Sheets[workbook.SheetNames[0]];
+            return XLSX.utils.sheet_to_json(sheet);
+        }
+
+        async function login() {
             clearMessages();
             const username = document.getElementById('username').value;
             const password = document.getElementById('password').value;
 
-            if (username === 'admin' && password === '12345') {
-                sessionStorage.setItem('authenticated', 'true');
-                window.location.href = 'protected.html';
-            } else {
+            try {
+                const users = await loadExcel();
+                const isValid = users.some(user => 
+                    user['Usuario'] === username && 
+                    user['Senha'] === password && 
+                    user['Status'] === 'Ativo'
+                );
+
+                if (isValid) {
+                    sessionStorage.setItem('authenticated', 'true');
+                    window.location.href = 'protected.html';
+                } else {
+                    const loginError = document.getElementById('login-error');
+                    loginError.style.display = 'block';
+                    loginError.innerText = 'Usuário ou senha incorretos, ou conta inativa!';
+                }
+            } catch (err) {
+                console.error('Erro ao validar login:', err);
                 const loginError = document.getElementById('login-error');
                 loginError.style.display = 'block';
-                loginError.innerText = 'Usuário ou senha incorretos!';
+                loginError.innerText = 'Erro ao validar login. Tente novamente.';
             }
         }
 
