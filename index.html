@@ -3,10 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login com Excel</title>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.17.0/xlsx.full.min.js"></script>
+    <title>Login</title>
     <script src="https://cdn.emailjs.com/dist/email.min.js"></script>
     <style>
+        /* Estilos para a página */
         body {
             font-family: Arial, sans-serif;
             background-color: #f4f4f9;
@@ -136,42 +136,40 @@
             document.querySelectorAll('.message').forEach(msg => msg.style.display = 'none');
         }
 
-        // Função para carregar o Excel
-        async function loadExcel() {
-            const response = await fetch('Logins.xlsx'); // Certifique-se de que o arquivo está no mesmo diretório
-            const data = await response.arrayBuffer();
-            const workbook = XLSX.read(data, { type: 'array' });
-            const sheet = workbook.Sheets[workbook.SheetNames[0]];
-            return XLSX.utils.sheet_to_json(sheet);
-        }
-
-        async function login() {
+        function login() {
             clearMessages();
             const username = document.getElementById('username').value;
             const password = document.getElementById('password').value;
 
-            try {
-                const users = await loadExcel();
-                const isValid = users.some(user => 
-                    user['Usuario'] === username && 
-                    user['Senha'] === password && 
-                    user['Status'] === 'Ativo'
-                );
+            // Validar usuário e senha via GitHub
+            fetch('https://raw.githubusercontent.com/Omninsight/insighthub360/main/Logins.xlsx')
+                .then(response => response.arrayBuffer())
+                .then(buffer => {
+                    const XLSX = window.XLSX;
+                    const data = new Uint8Array(buffer);
+                    const wb = XLSX.read(data, { type: 'array' });
 
-                if (isValid) {
-                    sessionStorage.setItem('authenticated', 'true');
-                    window.location.href = 'protected.html';
-                } else {
+                    // Encontrar o usuário e senha na planilha
+                    const sheet = wb.Sheets['Sheet1']; // Ajuste para o nome da planilha
+                    const users = XLSX.utils.sheet_to_json(sheet);
+                    const user = users.find(u => u.Usuário === username && u.Senha === password && u.Status === 'Ativo');
+                    
+                    if (user) {
+                        sessionStorage.setItem('authenticated', 'true');
+                        // Redireciona para o relatório do usuário (coluna G Relatório)
+                        window.location.href = user.Relatório;
+                    } else {
+                        const loginError = document.getElementById('login-error');
+                        loginError.style.display = 'block';
+                        loginError.innerText = 'Usuário ou senha incorretos!';
+                    }
+                })
+                .catch(err => {
+                    console.error('Erro ao acessar o arquivo no GitHub:', err);
                     const loginError = document.getElementById('login-error');
                     loginError.style.display = 'block';
-                    loginError.innerText = 'Usuário ou senha incorretos, ou conta inativa!';
-                }
-            } catch (err) {
-                console.error('Erro ao validar login:', err);
-                const loginError = document.getElementById('login-error');
-                loginError.style.display = 'block';
-                loginError.innerText = 'Erro ao validar login. Tente novamente.';
-            }
+                    loginError.innerText = 'Erro ao acessar os dados de login. Tente novamente mais tarde.';
+                });
         }
 
         function sendRegistration() {
