@@ -61,10 +61,21 @@
 </head>
 <body>
     <script>
+        // Bloqueia o botão direito do mouse
+        document.addEventListener('contextmenu', event => event.preventDefault());
+        // Bloqueia a seleção de texto
+        document.body.style.userSelect = "none";
+
         if (!sessionStorage.getItem("authenticated")) {
-            console.error("Usuário não autenticado. Redirecionando para a página de login.");
+            alert("Você não está autenticado!");
             window.location.href = "index.html";
         }
+
+        // Simulação de links criptografados
+        const encryptedLinks = {
+            user1: btoa('https://example.com/relatorio1.html'), // Criptografa o link
+            user2: btoa('https://example.com/relatorio2.html'),
+        };
 
         let inactivityTimeout;
 
@@ -77,7 +88,6 @@
         }
 
         function logout() {
-            console.log("Fazendo logout...");
             sessionStorage.removeItem("authenticated");
             window.location.href = "index.html";
         }
@@ -86,47 +96,30 @@
         document.addEventListener("keydown", resetInactivityTimer);
         document.addEventListener("click", resetInactivityTimer);
 
-        async function loadReport() {
-            const username = sessionStorage.getItem("authenticated"); // Usuário autenticado
-            console.log("Usuário autenticado:", username);
+        function loadReport() {
+            const username = sessionStorage.getItem("authenticated");
 
-            try {
-                console.log("Carregando o arquivo Logins.xlsx...");
-                const response = await fetch('Logins.xlsx');
-                if (!response.ok) {
-                    throw new Error("Erro ao carregar o arquivo Logins.xlsx. Verifique se ele está no mesmo diretório.");
-                }
-
-                const arrayBuffer = await response.arrayBuffer();
-                const workbook = XLSX.read(arrayBuffer, { type: 'array' });
-                const sheetName = workbook.SheetNames[0];
-                const sheet = workbook.Sheets[sheetName];
-                const data = XLSX.utils.sheet_to_json(sheet, { header: 1 });
-
-                const headers = data[0].map(h => h.toLowerCase().trim());
-                const userIndex = headers.indexOf('usuario');
-                const reportIndex = headers.indexOf('relatorio');
-
-                const rows = data.slice(1);
-                const userRow = rows.find(row => row[userIndex]?.trim() === username?.trim());
-                if (!userRow) {
-                    throw new Error('Usuário não encontrado no arquivo Excel.');
-                }
-
-                const reportHTML = userRow[reportIndex];
-                if (!reportHTML) {
-                    throw new Error("Relatório vazio ou não encontrado.");
-                }
-
-                const contentDiv = document.querySelector('.content');
-                contentDiv.innerHTML = reportHTML; // Renderiza o HTML do relatório
-
-                resetInactivityTimer(); // Reinicia o temporizador após carregar o relatório
-            } catch (error) {
-                console.error("Erro ao carregar o relatório:", error.message);
-                alert("Erro ao carregar o relatório. Verifique o console para mais detalhes.");
-                logout();
+            if (!username || !encryptedLinks[username]) {
+                alert("Usuário não autorizado ou relatório não encontrado.");
+                window.location.href = "index.html";
+                return;
             }
+
+            // Decodifica o link
+            const reportURL = atob(encryptedLinks[username]);
+
+            // Insere o link no iframe
+            const iframe = document.createElement('iframe');
+            iframe.src = reportURL;
+            iframe.style.width = "100%";
+            iframe.style.height = "100%";
+            iframe.style.border = "none";
+
+            const contentDiv = document.querySelector('.content');
+            contentDiv.innerHTML = ""; // Limpa conteúdo anterior
+            contentDiv.appendChild(iframe); // Adiciona o iframe seguro
+
+            resetInactivityTimer(); // Reinicia o temporizador após carregar o relatório
         }
 
         window.onload = loadReport;
