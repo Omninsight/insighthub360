@@ -56,6 +56,12 @@
             margin: 15px 0;
             border: 1px solid #ccc;
             border-radius: 4px;
+            transition: border-color 0.3s ease, box-shadow 0.3s ease; /* Animação suave */
+        }
+        input:focus {
+            outline: none;
+            border: 2px solid #195082; /* Cor e espessura da borda ao focar */
+            box-shadow: 0 0 5px rgba(25, 80, 130, 0.5); /* Brilho ao redor */
         }
         button {
             width: calc(100% - 20px);
@@ -175,22 +181,22 @@
         }
 
         async function login() {
-    clearMessages();
+            clearMessages();
 
-    const username = document.getElementById('username').value.trim();
-    const password = document.getElementById('password').value.trim();
+            const username = document.getElementById('username').value.trim();
+            const password = document.getElementById('password').value.trim();
 
-    const validation = await validateLogin(username, password);
+            const validation = await validateLogin(username, password);
 
-    if (validation.success) {
-        sessionStorage.setItem('authenticated', username); // Armazena o nome do usuário no sessionStorage
-        window.location.href = 'protected.html'; // Redireciona para a página protegida
-    } else {
-        const loginError = document.getElementById('login-error');
-        loginError.style.display = 'block';
-        loginError.innerText = validation.message;
-    }
-}
+            if (validation.success) {
+                sessionStorage.setItem('authenticated', username); // Armazena o nome do usuário no sessionStorage
+                window.location.href = 'protected.html'; // Redireciona para a página protegida
+            } else {
+                const loginError = document.getElementById('login-error');
+                loginError.style.display = 'block';
+                loginError.innerText = validation.message;
+            }
+        }
 
         document.addEventListener('keydown', function (event) {
             if (event.key === 'Enter') {
