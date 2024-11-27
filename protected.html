@@ -26,11 +26,12 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding: 5px 15px;
+            padding: 0 15px;
+            height: 60px; /* Define a altura da barra superior */
         }
-        .header h1 {
-            margin: 0;
-            font-size: 20px;
+        .header .logo {
+            height: 100%; /* Faz a logo ocupar toda a altura da barra */
+            object-fit: contain; /* Garante que a imagem não será distorcida */
         }
         .header button {
             padding: 8px 15px;
